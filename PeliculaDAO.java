@@ -4,19 +4,31 @@ import java.util.*;
 public class PeliculaDAO {
 
     public void crear(Pelicula p) {
-        String sql = "INSERT INTO peliculas (id_titulo, fecha_adquisicion, fecha_ultimo_alquiler, disponible, estado) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = Conexion.conectar(); PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, p.getId_titulo());
-            stmt.setDate(2, java.sql.Date.valueOf(p.getFecha_adquisicion()));
-            stmt.setDate(3, java.sql.Date.valueOf(p.getFecha_ultimo_alquiler()));
-            stmt.setBoolean(4, p.isDisponible());
-            stmt.setString(5, p.getEstado());
-            stmt.executeUpdate();
-            System.out.println("Pelicula registrada");
-        } catch (Exception e) {
-            System.out.println("Error al registrar pelicula: " + e.getMessage());
+    String sql = "INSERT INTO peliculas (id_titulo, fecha_adquisicion, fecha_ultimo_alquiler, disponible, estado) VALUES (?, ?, ?, ?, ?)";
+    
+    try (Connection conn = Conexion.conectar(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+        stmt.setInt(1, p.getId_titulo());
+        stmt.setDate(2, java.sql.Date.valueOf(p.getFecha_adquisicion()));
+        stmt.setDate(3, java.sql.Date.valueOf(p.getFecha_ultimo_alquiler()));
+        stmt.setBoolean(4, p.isDisponible());
+        stmt.setString(5, p.getEstado());
+        stmt.executeUpdate();
+
+        // Descontar 1 unidad si fue alquilada o vendida
+        if (p.getEstado().equalsIgnoreCase("A") || p.getEstado().equalsIgnoreCase("V")) {
+            String actualizarCantidad = "UPDATE titulos SET cantidad = cantidad - 1 WHERE id_titulo = ?";
+            try (PreparedStatement stmt2 = conn.prepareStatement(actualizarCantidad)) {
+                stmt2.setInt(1, p.getId_titulo());
+                stmt2.executeUpdate();
+            }
         }
+
+        System.out.println("Película registrada");
+
+    } catch (Exception e) {
+        System.out.println("Error al registrar película: " + e.getMessage());
     }
+}
 
     public List<Pelicula> listar() {
         List<Pelicula> lista = new ArrayList<>();
